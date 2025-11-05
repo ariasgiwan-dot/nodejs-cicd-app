@@ -1,5 +1,42 @@
-FROM python:3.9-slim
+FROM node:18-alpine
+
 WORKDIR /app
-COPY . /app
-RUN pip install -r requirements.txt
-CMD ["python", "app.py"]
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy application files
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Start application
+CMD ["npm", "start"]
+```
+
+**.dockerignore**:
+```
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+coverage
+*.test.js
+```
+
+**.gitignore**:
+```
+node_modules/
+coverage/
+.env
+*.log
